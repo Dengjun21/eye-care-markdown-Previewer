@@ -31,6 +31,8 @@
             --theme-accent: #c26d38;
             --theme-code-bg: #efe6d5;
             --font-family: 'Inter', sans-serif;
+            --preview-font-size: 16px;
+            --preview-line-height: 1.7;
         }
 
         /* Eye Care Theme Classes */
@@ -143,7 +145,7 @@
         .markdown-body h3 { font-size: 1.25em; }
 
         .markdown-body p {
-            margin-bottom: var(--preview-para-spacing, 1.25em);
+            margin-bottom: 1.25em;
         }
 
         .markdown-body a {
@@ -186,16 +188,31 @@
             border: 1px solid var(--theme-border);
         }
 
+        /* Table Responsive Wrapper & Styling */
+        .table-responsive-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            margin-bottom: 1.25em;
+            border-radius: 8px;
+            border: 1px solid var(--theme-border);
+        }
+
         .markdown-body table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 1.25em;
+            margin-bottom: 0;
+            white-space: nowrap;
         }
 
         .markdown-body th, .markdown-body td {
-            border: 1px solid var(--theme-border);
-            padding: 0.6em 0.8em;
+            border-bottom: 1px solid var(--theme-border);
+            border-right: 1px solid var(--theme-border);
+            padding: 0.75em 1em;
             text-align: left;
+        }
+
+        .markdown-body th:last-child, .markdown-body td:last-child {
+            border-right: none;
         }
 
         .markdown-body th {
@@ -222,17 +239,22 @@
             overflow-x: auto;
         }
 
-        /* Zoom scale container */
-        #preview-content {
-            transform-origin: top left;
+        /* Centered Zoom Scale Container */
+        #preview-wrapper {
+            transform-origin: top center;
             transition: transform 0.15s ease-out;
+            width: 100%;
+            max-width: 48rem; /* 768px base max width */
+            margin-left: auto;
+            margin-right: auto;
         }
 
         /* Immersion Mode Styling */
         body.immersion-mode #app-header,
         body.immersion-mode #editor-pane,
         body.immersion-mode #status-bar,
-        body.immersion-mode #resizer {
+        body.immersion-mode #resizer,
+        body.immersion-mode #immersion-tip {
             display: none !important;
         }
 
@@ -405,18 +427,20 @@
             <!-- Tip Banner -->
             <div id="immersion-tip" class="bg-theme-panel/70 border-b border-theme px-3 py-1 text-[11px] text-center opacity-75 flex items-center justify-center gap-1.5">
                 <i data-lucide="info" class="w-3 h-3 text-amber-600"></i>
-                <span>Tip: <b>Ctrl + Right-Click</b> anywhere on the preview pane for Immersion Reading Mode</span>
+                <span>Tip: <b>Ctrl + Right-Click</b> anywhere on the page to toggle Immersion Reading Mode on/off (or Esc to exit)</span>
             </div>
 
-            <!-- Preview Render Wrapper -->
+            <!-- Preview Render Wrapper (Centered Scaling) -->
             <div class="p-6 md:p-10 flex-1">
-                <div id="preview-content" class="markdown-body max-w-3xl mx-auto"></div>
+                <div id="preview-wrapper">
+                    <div id="preview-content" class="markdown-body"></div>
+                </div>
             </div>
 
             <!-- Floating Immersion Close Button -->
             <button id="btn-exit-immersion" class="hidden fixed top-6 right-6 bg-theme-panel border border-theme text-theme-main hover:bg-amber-600 hover:text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 text-xs font-semibold z-50 transition-all">
                 <i data-lucide="x" class="w-4 h-4"></i>
-                <span>Exit Immersion (Esc)</span>
+                <span>Exit Immersion (Ctrl+Right-Click or Esc)</span>
             </button>
         </section>
     </main>
@@ -435,7 +459,7 @@
     </footer>
 
     <script>
-        // Default Sample Markdown Document
+        // Default Sample Markdown Document with wide tables and diagrams
         const sampleMarkdown = `# 🌿 Welcome to EyeCare Markdown
 
 An eye-friendly, low-strain Markdown previewer designed for comfortable reading, study, and long typing sessions.
@@ -446,14 +470,12 @@ An eye-friendly, low-strain Markdown previewer designed for comfortable reading,
 
 - **Soft Color Palettes**: Toggle between Warm Sepia, Soft Dark, Sage, and Midnight themes.
 - **Blue Light Warm Filter**: Fine-tune warm light intensity with the top slider.
-- **Immersion Focus Mode**: Simply **Ctrl + Right-Click** anywhere on the right preview pane!
-- **Zoom Controls**: Easily zoom preview text in/out using top toolbar controls or **Ctrl + Mouse Wheel**.
+- **Immersion Focus Mode**: Simply **Ctrl + Right-Click** *anywhere* on the page to toggle focus mode on and off instantly!
+- **Centered Zoom & Table Scroll**: Seamlessly zoom in/out with centered proportions and horizontally scroll wide tables.
 
 ---
 
 ## 📊 Mermaid Diagram Support
-
-You can create interactive diagrams seamlessly using code blocks:
 
 \`\`\`mermaid
 flowchart TD
@@ -480,14 +502,14 @@ console.log(calculateReadingComfort(true, 0.15));
 
 ---
 
-## 📑 Detailed Table Example
+## 📑 Wide Table Example (With Horizontal Scroll)
 
-| Theme Option | Ideal Environment | Eye Protection Rating |
-| :--- | :--- | :---: |
-| **Warm Sepia** | Warm Indoor Lighting | ⭐⭐⭐⭐⭐ |
-| **Sage Green** | Natural Daylight | ⭐⭐⭐⭐ |
-| **Soft Dark** | Low-Light Rooms | ⭐⭐⭐⭐⭐ |
-| **Midnight** | Nighttime Reading | ⭐⭐⭐⭐⭐ |
+| Theme Option | Ideal Environment | Eye Protection Rating | Blue-Light Reduction | Recommended Hours | Contrast Ratio |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **Warm Sepia** | Warm Indoor Lighting | ⭐⭐⭐⭐⭐ | High (Warm Tones) | 4-6 Hours | 12:1 |
+| **Sage Green** | Natural Daylight | ⭐⭐⭐⭐ | Moderate | 3-5 Hours | 14:1 |
+| **Soft Dark** | Low-Light Rooms | ⭐⭐⭐⭐⭐ | Maximum (OLED Safe) | 6+ Hours | 16:1 |
+| **Midnight** | Nighttime Reading | ⭐⭐⭐⭐⭐ | Maximum | 5+ Hours | 18:1 |
 
 > *"Protecting your eyes today ensures clear vision tomorrow. Take breaks every 20 minutes!"*
 `;
@@ -506,6 +528,7 @@ console.log(calculateReadingComfort(true, 0.15));
         // DOM Element References
         const markdownInput = document.getElementById('markdown-input');
         const previewContent = document.getElementById('preview-content');
+        const previewWrapper = document.getElementById('preview-wrapper');
         const themeSelect = document.getElementById('theme-select');
         const warmSlider = document.getElementById('warm-slider');
         const warmOverlay = document.getElementById('warm-light-overlay');
@@ -541,6 +564,17 @@ console.log(calculateReadingComfort(true, 0.15));
             // Parse Markdown
             let parsedHtml = marked.parse(rawText);
             previewContent.innerHTML = parsedHtml;
+
+            // Wrap all tables in a responsive scroll container
+            const tables = previewContent.querySelectorAll('table');
+            tables.forEach(table => {
+                if (!table.parentElement.classList.contains('table-responsive-wrapper')) {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'table-responsive-wrapper';
+                    table.parentNode.insertBefore(wrapper, table);
+                    wrapper.appendChild(table);
+                }
+            });
 
             // Render Mermaid Diagrams
             const mermaidBlocks = previewContent.querySelectorAll('pre code.language-mermaid');
@@ -630,12 +664,11 @@ console.log(calculateReadingComfort(true, 0.15));
         setupToggleMenu('typo-menu-btn', 'typo-menu');
         setupToggleMenu('export-menu-btn', 'export-menu');
 
-        // Zoom Functions
+        // Zoom Functions with Centered Proportions
         function applyZoom(delta) {
             currentZoom = Math.min(Math.max(0.6, currentZoom + delta), 2.2);
             zoomVal.textContent = `${Math.round(currentZoom * 100)}%`;
-            previewContent.style.transform = `scale(${currentZoom})`;
-            previewContent.style.width = `${100 / currentZoom}%`;
+            previewWrapper.style.transform = `scale(${currentZoom})`;
         }
 
         document.getElementById('btn-zoom-in').addEventListener('click', () => applyZoom(0.1));
@@ -643,8 +676,7 @@ console.log(calculateReadingComfort(true, 0.15));
         document.getElementById('btn-zoom-reset').addEventListener('click', () => {
             currentZoom = 1.0;
             zoomVal.textContent = '100%';
-            previewContent.style.transform = 'scale(1)';
-            previewContent.style.width = '100%';
+            previewWrapper.style.transform = 'scale(1)';
         });
 
         // Ctrl + Mouse Wheel Zoom
@@ -657,7 +689,12 @@ console.log(calculateReadingComfort(true, 0.15));
 
         // Immersion Focus Mode Setup
         function toggleImmersionMode(enable) {
-            isImmersion = enable;
+            if (enable === undefined) {
+                isImmersion = !isImmersion;
+            } else {
+                isImmersion = enable;
+            }
+
             if (isImmersion) {
                 document.body.classList.add('immersion-mode');
                 btnExitImmersion.classList.remove('hidden');
@@ -667,11 +704,11 @@ console.log(calculateReadingComfort(true, 0.15));
             }
         }
 
-        // Ctrl + Right Click triggered Immersion Mode
-        previewPane.addEventListener('contextmenu', (e) => {
+        // Global Ctrl + Right-Click Handler on Document (Toggles immersion mode back and forth)
+        document.addEventListener('contextmenu', (e) => {
             if (e.ctrlKey) {
                 e.preventDefault();
-                toggleImmersionMode(true);
+                toggleImmersionMode(); // toggles current state
             }
         });
 
@@ -736,6 +773,7 @@ console.log(calculateReadingComfort(true, 0.15));
 <title>Exported Markdown</title>
 <style>
 body { font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+.table-responsive-wrapper { overflow-x: auto; }
 table { border-collapse: collapse; width: 100%; }
 th, td { border: 1px solid #ccc; padding: 8px; }
 pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; }
