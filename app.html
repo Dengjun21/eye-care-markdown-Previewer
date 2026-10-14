@@ -1,1083 +1,770 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EyeCare Markdown Previewer</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Mermaid.js for Diagrams -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- Highlight.js for Code Syntax -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" id="hljs-theme">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Lora:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        /* Theme Variables */
+        :root {
+            --theme-bg: #fbf7f0;
+            --theme-editor-bg: #f4eee0;
+            --theme-text: #433422;
+            --theme-border: #e6dac3;
+            --theme-panel: #f7f1e5;
+            --theme-accent: #c26d38;
+            --theme-code-bg: #efe6d5;
+            --font-family: 'Inter', sans-serif;
+        }
+
+        /* Eye Care Theme Classes */
+        body.theme-sepia {
+            --theme-bg: #faf4e8;
+            --theme-editor-bg: #f2e8d5;
+            --theme-text: #433422;
+            --theme-border: #e2d3ba;
+            --theme-panel: #ede1cb;
+            --theme-accent: #b85b24;
+            --theme-code-bg: #e8dbcf;
+        }
+
+        body.theme-cream {
+            --theme-bg: #fdfbf7;
+            --theme-editor-bg: #f5f2eb;
+            --theme-text: #2d3748;
+            --theme-border: #e2e8f0;
+            --theme-panel: #f8f6f0;
+            --theme-accent: #4a5568;
+            --theme-code-bg: #edf2f7;
+        }
+
+        body.theme-sage {
+            --theme-bg: #f2f5f3;
+            --theme-editor-bg: #e4ece7;
+            --theme-text: #2c3a35;
+            --theme-border: #ccd8d1;
+            --theme-panel: #dbe4df;
+            --theme-accent: #3b6e58;
+            --theme-code-bg: #d7e2dc;
+        }
+
+        body.theme-soft-dark {
+            --theme-bg: #222629;
+            --theme-editor-bg: #1b1e20;
+            --theme-text: #b8c0c2;
+            --theme-border: #333a3e;
+            --theme-panel: #2a2f33;
+            --theme-accent: #689d6a;
+            --theme-code-bg: #181a1b;
+        }
+
+        body.theme-midnight {
+            --theme-bg: #141821;
+            --theme-editor-bg: #0d1017;
+            --theme-text: #9aa5ce;
+            --theme-border: #1f2738;
+            --theme-panel: #181e2b;
+            --theme-accent: #7aa2f7;
+            --theme-code-bg: #0b0e14;
+        }
+
+        /* Apply theme dynamic colors */
+        body {
+            background-color: var(--theme-bg);
+            color: var(--theme-text);
+            font-family: var(--font-family);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .bg-theme-main { background-color: var(--theme-bg); }
+        .bg-theme-editor { background-color: var(--theme-editor-bg); }
+        .bg-theme-panel { background-color: var(--theme-panel); }
+        .border-theme { border-color: var(--theme-border); }
+        .text-theme-main { color: var(--theme-text); }
+        .text-theme-accent { color: var(--theme-accent); }
+
+        /* Warm Filter Overlay */
+        #warm-light-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            background-color: rgba(255, 170, 0, 0);
+            mix-blend-mode: multiply;
+            transition: background-color 0.2s ease;
+        }
+
+        /* Typography selections */
+        .font-sans-custom { font-family: 'Inter', system-ui, sans-serif; }
+        .font-serif-custom { font-family: 'Lora', Georgia, serif; }
+        .font-mono-custom { font-family: 'JetBrains Mono', monospace; }
+        .font-dyslexic-custom { font-family: 'Atkinson Hyperlegible', sans-serif; }
+
+        /* Markdown Styles */
+        .markdown-body {
+            font-family: inherit;
+            color: inherit;
+            line-height: var(--preview-line-height, 1.7);
+            font-size: var(--preview-font-size, 16px);
+        }
+
+        .markdown-body h1, .markdown-body h2, .markdown-body h3, 
+        .markdown-body h4, .markdown-body h5, .markdown-body h6 {
+            font-weight: 700;
+            margin-top: 1.5em;
+            margin-bottom: 0.6em;
+            line-height: 1.25;
+            color: var(--theme-text);
+            border-bottom: 1px solid var(--theme-border);
+            padding-bottom: 0.3em;
+        }
+
+        .markdown-body h1 { font-size: 2em; }
+        .markdown-body h2 { font-size: 1.5em; }
+        .markdown-body h3 { font-size: 1.25em; }
+
+        .markdown-body p {
+            margin-bottom: var(--preview-para-spacing, 1.25em);
+        }
+
+        .markdown-body a {
+            color: var(--theme-accent);
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .markdown-body ul, .markdown-body ol {
+            padding-left: 1.75em;
+            margin-bottom: 1.25em;
+        }
+        .markdown-body ul { list-style-type: disc; }
+        .markdown-body ol { list-style-type: decimal; }
+
+        .markdown-body blockquote {
+            border-left: 4px solid var(--theme-accent);
+            padding-left: 1em;
+            margin-left: 0;
+            margin-right: 0;
+            margin-bottom: 1.25em;
+            opacity: 0.85;
+            font-style: italic;
+        }
+
+        .markdown-body code:not(pre code) {
+            background-color: var(--theme-code-bg);
+            padding: 0.2em 0.4em;
+            border-radius: 4px;
+            font-size: 0.9em;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .markdown-body pre {
+            background-color: var(--theme-code-bg);
+            padding: 1em;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin-bottom: 1.25em;
+            border: 1px solid var(--theme-border);
+        }
+
+        .markdown-body table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.25em;
+        }
+
+        .markdown-body th, .markdown-body td {
+            border: 1px solid var(--theme-border);
+            padding: 0.6em 0.8em;
+            text-align: left;
+        }
+
+        .markdown-body th {
+            background-color: var(--theme-panel);
+            font-weight: 600;
+        }
+
+        .markdown-body hr {
+            border: 0;
+            height: 1px;
+            background: var(--theme-border);
+            margin: 2em 0;
+        }
+
+        /* Mermaid wrapper styling */
+        .mermaid-container {
+            display: flex;
+            justify-content: center;
+            background: var(--theme-panel);
+            padding: 1.25rem;
+            border-radius: 8px;
+            border: 1px solid var(--theme-border);
+            margin: 1.5rem 0;
+            overflow-x: auto;
+        }
+
+        /* Zoom scale container */
+        #preview-content {
+            transform-origin: top left;
+            transition: transform 0.15s ease-out;
+        }
+
+        /* Immersion Mode Styling */
+        body.immersion-mode #app-header,
+        body.immersion-mode #editor-pane,
+        body.immersion-mode #status-bar,
+        body.immersion-mode #resizer {
+            display: none !important;
+        }
+
+        body.immersion-mode #preview-pane {
+            width: 100vw !important;
+            height: 100vh !important;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 50;
+            padding: 3rem 15vw !important;
+            overflow-y: auto;
+        }
+
+        @media (max-width: 768px) {
+            body.immersion-mode #preview-pane {
+                padding: 1.5rem 1rem !important;
+            }
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--theme-bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--theme-border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--theme-accent);
+        }
+    </style>
+</head>
+<body class="theme-sepia h-full flex flex-col antialiased font-sans-custom select-none">
+
+    <!-- Warm Light / Eye Protection Overlay -->
+    <div id="warm-light-overlay"></div>
+
+    <!-- Top Header / Controls -->
+    <header id="app-header" class="bg-theme-panel border-b border-theme px-4 py-2 flex flex-wrap items-center justify-between gap-2 shadow-sm text-sm">
+        <!-- Logo & Title -->
+        <div class="flex items-center gap-2 font-semibold text-theme-accent">
+            <i data-lucide="eye" class="w-5 h-5"></i>
+            <span class="tracking-wide hidden sm:inline">EyeCare Markdown</span>
+        </div>
+
+        <!-- Controls Toolbar -->
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Theme Selector -->
+            <div class="flex items-center gap-1.5 bg-theme-main px-2 py-1 rounded-lg border border-theme">
+                <i data-lucide="palette" class="w-4 h-4 opacity-70"></i>
+                <select id="theme-select" class="bg-transparent focus:outline-none text-xs font-medium cursor-pointer">
+                    <option value="theme-sepia">Warm Sepia</option>
+                    <option value="theme-cream">Cream Light</option>
+                    <option value="theme-sage">Sage Green</option>
+                    <option value="theme-soft-dark">Soft Dark</option>
+                    <option value="theme-midnight">Midnight Low-Contrast</option>
+                </select>
+            </div>
+
+            <!-- Warm Overlay Filter Toggle & Intensity -->
+            <div class="flex items-center gap-2 bg-theme-main px-2.5 py-1 rounded-lg border border-theme" title="Warm Blue-Light Filter">
+                <i data-lucide="sun" class="w-4 h-4 text-amber-600"></i>
+                <input type="range" id="warm-slider" min="0" max="0.35" step="0.02" value="0.08" class="w-16 h-1 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-amber-600">
+            </div>
+
+            <!-- Typography Settings Dropdown -->
+            <div class="relative inline-block text-left">
+                <button id="typo-menu-btn" class="flex items-center gap-1 bg-theme-main px-2.5 py-1 rounded-lg border border-theme hover:border-amber-500 text-xs font-medium">
+                    <i data-lucide="type" class="w-4 h-4 opacity-70"></i>
+                    <span>Font</span>
+                    <i data-lucide="chevron-down" class="w-3 h-3 opacity-50"></i>
+                </button>
+                <!-- Dropdown Menu -->
+                <div id="typo-menu" class="hidden absolute right-0 mt-2 w-56 bg-theme-panel border border-theme rounded-xl shadow-xl z-50 p-3 text-xs space-y-3">
+                    <div>
+                        <label class="block font-semibold mb-1 opacity-80">Font Family</label>
+                        <select id="font-family-select" class="w-full bg-theme-main border border-theme rounded p-1 focus:outline-none">
+                            <option value="font-sans-custom">Sans-Serif (Inter)</option>
+                            <option value="font-serif-custom">Serif (Lora)</option>
+                            <option value="font-mono-custom">Monospace (JetBrains)</option>
+                            <option value="font-dyslexic-custom">Dyslexic Friendly (Atkinson)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-semibold opacity-80">Font Size</span>
+                            <span id="font-size-val">16px</span>
+                        </div>
+                        <input type="range" id="font-size-slider" min="12" max="24" value="16" class="w-full h-1 bg-neutral-300 rounded appearance-none cursor-pointer">
+                    </div>
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-semibold opacity-80">Line Height</span>
+                            <span id="line-height-val">1.7</span>
+                        </div>
+                        <input type="range" id="line-height-slider" min="1.2" max="2.4" step="0.1" value="1.7" class="w-full h-1 bg-neutral-300 rounded appearance-none cursor-pointer">
+                    </div>
+                </div>
+            </div>
+
+            <div class="h-4 w-px bg-theme-border"></div>
+
+            <!-- Zoom Controls -->
+            <div class="flex items-center bg-theme-main border border-theme rounded-lg overflow-hidden text-xs">
+                <button id="btn-zoom-out" class="px-2 py-1 hover:bg-theme-panel transition border-r border-theme" title="Zoom Out (Ctrl + Scroll Down)">
+                    <i data-lucide="zoom-out" class="w-3.5 h-3.5"></i>
+                </button>
+                <span id="zoom-val" class="px-2 font-mono font-medium min-w-[3rem] text-center">100%</span>
+                <button id="btn-zoom-in" class="px-2 py-1 hover:bg-theme-panel transition border-l border-theme" title="Zoom In (Ctrl + Scroll Up)">
+                    <i data-lucide="zoom-in" class="w-3.5 h-3.5"></i>
+                </button>
+                <button id="btn-zoom-reset" class="px-2 py-1 hover:bg-theme-panel transition border-l border-theme opacity-70" title="Reset Zoom">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                </button>
+            </div>
+
+            <!-- Immersion Reading Mode Trigger -->
+            <button id="btn-immersion" class="flex items-center gap-1.5 bg-theme-accent text-white px-3 py-1 rounded-lg hover:opacity-90 transition text-xs font-medium shadow-sm">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+                <span class="hidden md:inline">Focus Reading</span>
+            </button>
+
+            <!-- Export Menu -->
+            <div class="relative inline-block text-left">
+                <button id="export-menu-btn" class="flex items-center gap-1 bg-theme-main px-2.5 py-1 rounded-lg border border-theme hover:border-amber-500 text-xs font-medium">
+                    <i data-lucide="download" class="w-4 h-4 opacity-70"></i>
+                    <span>Export</span>
+                </button>
+                <div id="export-menu" class="hidden absolute right-0 mt-2 w-40 bg-theme-panel border border-theme rounded-xl shadow-xl z-50 py-1 text-xs">
+                    <button id="export-md" class="w-full text-left px-3 py-2 hover:bg-theme-main flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Save Markdown
+                    </button>
+                    <button id="export-html" class="w-full text-left px-3 py-2 hover:bg-theme-main flex items-center gap-2">
+                        <i data-lucide="code" class="w-3.5 h-3.5"></i> Save HTML
+                    </button>
+                    <button id="export-print" class="w-full text-left px-3 py-2 hover:bg-theme-main flex items-center gap-2">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i> Print / PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Split Screen -->
+    <main class="flex-1 flex overflow-hidden relative">
+        
+        <!-- Editor Pane -->
+        <section id="editor-pane" class="w-1/2 flex flex-col border-r border-theme bg-theme-editor min-w-[200px] transition-all duration-75">
+            <div class="px-3 py-1.5 bg-theme-panel border-b border-theme flex justify-between items-center text-xs opacity-80 font-medium">
+                <span class="flex items-center gap-1.5">
+                    <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editor
+                </span>
+                <button id="btn-toggle-editor" class="hover:text-amber-600" title="Collapse Editor">
+                    <i data-lucide="panel-left-close" class="w-4 h-4"></i>
+                </button>
+            </div>
+            <textarea id="markdown-input" class="flex-1 w-full p-4 bg-transparent resize-none focus:outline-none font-mono-custom text-sm leading-relaxed border-none text-theme-main select-text" placeholder="Type Markdown here..."></textarea>
+        </section>
+
+        <!-- Divider Resizer -->
+        <div id="resizer" class="w-1 bg-theme-border hover:bg-amber-500 cursor-col-resize transition-colors z-10 hidden md:block"></div>
+
+        <!-- Preview Pane -->
+        <section id="preview-pane" class="flex-1 flex flex-col bg-theme-main overflow-y-auto relative select-text">
+            <!-- Tip Banner -->
+            <div id="immersion-tip" class="bg-theme-panel/70 border-b border-theme px-3 py-1 text-[11px] text-center opacity-75 flex items-center justify-center gap-1.5">
+                <i data-lucide="info" class="w-3 h-3 text-amber-600"></i>
+                <span>Tip: <b>Ctrl + Right-Click</b> anywhere on the preview pane for Immersion Reading Mode</span>
+            </div>
+
+            <!-- Preview Render Wrapper -->
+            <div class="p-6 md:p-10 flex-1">
+                <div id="preview-content" class="markdown-body max-w-3xl mx-auto"></div>
+            </div>
+
+            <!-- Floating Immersion Close Button -->
+            <button id="btn-exit-immersion" class="hidden fixed top-6 right-6 bg-theme-panel border border-theme text-theme-main hover:bg-amber-600 hover:text-white px-4 py-2 rounded-full shadow-2xl flex items-center gap-2 text-xs font-semibold z-50 transition-all">
+                <i data-lucide="x" class="w-4 h-4"></i>
+                <span>Exit Immersion (Esc)</span>
+            </button>
+        </section>
+    </main>
+
+    <!-- Footer / Status Bar -->
+    <footer id="status-bar" class="bg-theme-panel border-t border-theme px-4 py-1.5 flex justify-between items-center text-xs opacity-80">
+        <div class="flex items-center gap-4">
+            <span id="stat-words">0 words</span>
+            <span id="stat-chars">0 characters</span>
+            <span id="stat-reading-time">1 min read</span>
+        </div>
+        <div class="flex items-center gap-2">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Live Syncing</span>
+        </div>
+    </footer>
+
+    <script>
+        // Default Sample Markdown Document
+        const sampleMarkdown = `# 🌿 Welcome to EyeCare Markdown
+
+An eye-friendly, low-strain Markdown previewer designed for comfortable reading, study, and long typing sessions.
+
+---
+
+## 👁️ Key Eye Care Features
+
+- **Soft Color Palettes**: Toggle between Warm Sepia, Soft Dark, Sage, and Midnight themes.
+- **Blue Light Warm Filter**: Fine-tune warm light intensity with the top slider.
+- **Immersion Focus Mode**: Simply **Ctrl + Right-Click** anywhere on the right preview pane!
+- **Zoom Controls**: Easily zoom preview text in/out using top toolbar controls or **Ctrl + Mouse Wheel**.
+
+---
+
+## 📊 Mermaid Diagram Support
+
+You can create interactive diagrams seamlessly using code blocks:
+
+\`\`\`mermaid
+flowchart TD
+    A[Start Reading] --> B{Eye Strain?}
+    B -- Yes --> C[Switch to Warm Sepia / Soft Dark]
+    B -- No --> D[Enable Immersion Mode]
+    C --> D
+    D --> E[Enjoy Relaxed Reading ☕]
+\`\`\`
+
+---
+
+## 📝 Code Syntax Highlighting
+
+\`\`\`javascript
+// Quick JavaScript snippet
+function calculateReadingComfort(darkTheme, warmFilterLevel) {
+    const eyeStrain = 100 - (darkTheme ? 40 : 20) - (warmFilterLevel * 100);
+    return eyeStrain < 30 ? "Optimal Eye Comfort 🌿" : "Adjust Lighting";
+}
+
+console.log(calculateReadingComfort(true, 0.15));
+\`\`\`
+
+---
+
+## 📑 Detailed Table Example
+
+| Theme Option | Ideal Environment | Eye Protection Rating |
+| :--- | :--- | :---: |
+| **Warm Sepia** | Warm Indoor Lighting | ⭐⭐⭐⭐⭐ |
+| **Sage Green** | Natural Daylight | ⭐⭐⭐⭐ |
+| **Soft Dark** | Low-Light Rooms | ⭐⭐⭐⭐⭐ |
+| **Midnight** | Nighttime Reading | ⭐⭐⭐⭐⭐ |
+
+> *"Protecting your eyes today ensures clear vision tomorrow. Take breaks every 20 minutes!"*
+`;
+
+        // State variables
+        let currentZoom = 1.0;
+        let isImmersion = false;
+
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'neutral',
+            securityLevel: 'loose'
+        });
+
+        // DOM Element References
+        const markdownInput = document.getElementById('markdown-input');
+        const previewContent = document.getElementById('preview-content');
+        const themeSelect = document.getElementById('theme-select');
+        const warmSlider = document.getElementById('warm-slider');
+        const warmOverlay = document.getElementById('warm-light-overlay');
+        const fontSelect = document.getElementById('font-family-select');
+        const fontSizeSlider = document.getElementById('font-size-slider');
+        const fontSizeVal = document.getElementById('font-size-val');
+        const lineHeightSlider = document.getElementById('line-height-slider');
+        const lineHeightVal = document.getElementById('line-height-val');
+        const zoomVal = document.getElementById('zoom-val');
+        const previewPane = document.getElementById('preview-pane');
+        const editorPane = document.getElementById('editor-pane');
+        const btnToggleEditor = document.getElementById('btn-toggle-editor');
+        const btnImmersion = document.getElementById('btn-immersion');
+        const btnExitImmersion = document.getElementById('btn-exit-immersion');
+
+        // Render Markdown to Preview
+        async function renderMarkdown() {
+            const rawText = markdownInput.value;
+            
+            // Configure Marked options
+            marked.setOptions({
+                highlight: function(code, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        try {
+                            return hljs.highlight(code, { language: lang }).value;
+                        } catch (e) {}
+                    }
+                    return hljs.highlightAuto(code).value;
+                },
+                breaks: true
+            });
+
+            // Parse Markdown
+            let parsedHtml = marked.parse(rawText);
+            previewContent.innerHTML = parsedHtml;
+
+            // Render Mermaid Diagrams
+            const mermaidBlocks = previewContent.querySelectorAll('pre code.language-mermaid');
+            for (let i = 0; i < mermaidBlocks.length; i++) {
+                const block = mermaidBlocks[i];
+                const pre = block.parentElement;
+                const code = block.textContent;
+                
+                const container = document.createElement('div');
+                container.className = 'mermaid-container';
+                const id = `mermaid-svg-${Date.now()}-${i}`;
+                
+                try {
+                    const { svg } = await mermaid.render(id, code);
+                    container.innerHTML = svg;
+                    pre.replaceWith(container);
+                } catch (err) {
+                    container.innerHTML = `<pre class="text-red-500 text-xs p-2">Mermaid Diagram Error</pre>`;
+                    pre.replaceWith(container);
+                }
+            }
+
+            // Update stats
+            updateStats(rawText);
+        }
+
+        // Calculate Stats
+        function updateStats(text) {
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            const readingTime = Math.max(1, Math.ceil(words / 200));
+
+            document.getElementById('stat-words').textContent = `${words.toLocaleString()} words`;
+            document.getElementById('stat-chars').textContent = `${chars.toLocaleString()} characters`;
+            document.getElementById('stat-reading-time').textContent = `~${readingTime} min read`;
+        }
+
+        // Theme Switcher
+        themeSelect.addEventListener('change', (e) => {
+            document.body.className = `${e.target.value} h-full flex flex-col antialiased select-none ${fontSelect.value}`;
+            
+            // Adjust Highlight.js theme dynamically
+            const hljsTheme = document.getElementById('hljs-theme');
+            if (e.target.value === 'theme-soft-dark' || e.target.value === 'theme-midnight') {
+                hljsTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css';
+            } else {
+                hljsTheme.href = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css';
+            }
+            renderMarkdown();
+        });
+
+        // Warm Overlay Intensity Slider
+        warmSlider.addEventListener('input', (e) => {
+            warmOverlay.style.backgroundColor = `rgba(255, 170, 0, ${e.target.value})`;
+        });
+        warmOverlay.style.backgroundColor = `rgba(255, 170, 0, ${warmSlider.value})`;
+
+        // Typography settings
+        fontSelect.addEventListener('change', (e) => {
+            document.body.classList.remove('font-sans-custom', 'font-serif-custom', 'font-mono-custom', 'font-dyslexic-custom');
+            document.body.classList.add(e.target.value);
+        });
+
+        fontSizeSlider.addEventListener('input', (e) => {
+            const size = e.target.value;
+            fontSizeVal.textContent = `${size}px`;
+            document.documentElement.style.setProperty('--preview-font-size', `${size}px`);
+        });
+
+        lineHeightSlider.addEventListener('input', (e) => {
+            const val = e.target.value;
+            lineHeightVal.textContent = val;
+            document.documentElement.style.setProperty('--preview-line-height', val);
+        });
+
+        // Toggle Menus
+        function setupToggleMenu(btnId, menuId) {
+            const btn = document.getElementById(btnId);
+            const menu = document.getElementById(menuId);
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('hidden');
+            });
+            document.addEventListener('click', () => menu.classList.add('hidden'));
+            menu.addEventListener('click', (e) => e.stopPropagation());
+        }
+        setupToggleMenu('typo-menu-btn', 'typo-menu');
+        setupToggleMenu('export-menu-btn', 'export-menu');
+
+        // Zoom Functions
+        function applyZoom(delta) {
+            currentZoom = Math.min(Math.max(0.6, currentZoom + delta), 2.2);
+            zoomVal.textContent = `${Math.round(currentZoom * 100)}%`;
+            previewContent.style.transform = `scale(${currentZoom})`;
+            previewContent.style.width = `${100 / currentZoom}%`;
+        }
+
+        document.getElementById('btn-zoom-in').addEventListener('click', () => applyZoom(0.1));
+        document.getElementById('btn-zoom-out').addEventListener('click', () => applyZoom(-0.1));
+        document.getElementById('btn-zoom-reset').addEventListener('click', () => {
+            currentZoom = 1.0;
+            zoomVal.textContent = '100%';
+            previewContent.style.transform = 'scale(1)';
+            previewContent.style.width = '100%';
+        });
+
+        // Ctrl + Mouse Wheel Zoom
+        previewPane.addEventListener('wheel', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                applyZoom(e.deltaY < 0 ? 0.05 : -0.05);
+            }
+        }, { passive: false });
+
+        // Immersion Focus Mode Setup
+        function toggleImmersionMode(enable) {
+            isImmersion = enable;
+            if (isImmersion) {
+                document.body.classList.add('immersion-mode');
+                btnExitImmersion.classList.remove('hidden');
+            } else {
+                document.body.classList.remove('immersion-mode');
+                btnExitImmersion.classList.add('hidden');
+            }
+        }
+
+        // Ctrl + Right Click triggered Immersion Mode
+        previewPane.addEventListener('contextmenu', (e) => {
+            if (e.ctrlKey) {
+                e.preventDefault();
+                toggleImmersionMode(true);
+            }
+        });
+
+        btnImmersion.addEventListener('click', () => toggleImmersionMode(true));
+        btnExitImmersion.addEventListener('click', () => toggleImmersionMode(false));
+
+        // Key bindings
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isImmersion) {
+                toggleImmersionMode(false);
+            }
+        });
+
+        // Collapsible Editor
+        let editorCollapsed = false;
+        btnToggleEditor.addEventListener('click', () => {
+            editorCollapsed = !editorCollapsed;
+            if (editorCollapsed) {
+                editorPane.classList.add('hidden');
+            } else {
+                editorPane.classList.remove('hidden');
+            }
+        });
+
+        // Resizable Split Pane Logic
+        const resizer = document.getElementById('resizer');
+        let isResizing = false;
+
+        resizer.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            document.body.style.cursor = 'col-resize';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            const containerWidth = document.querySelector('main').clientWidth;
+            const newEditorWidth = (e.clientX / containerWidth) * 100;
+            if (newEditorWidth > 15 && newEditorWidth < 85) {
+                editorPane.style.width = `${newEditorWidth}%`;
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+            document.body.style.cursor = 'default';
+        });
+
+        // Export Functions
+        document.getElementById('export-md').addEventListener('click', () => {
+            const blob = new Blob([markdownInput.value], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'eyecare-document.md';
+            a.click();
+        });
+
+        document.getElementById('export-html').addEventListener('click', () => {
+            const fullHtml = `<!DOCTYPE html>
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>护眼 Markdown 阅读器</title>
-<script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@ant-design/icons-svg@4.4.2/es/index.css">
+<title>Exported Markdown</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-  :root {
-    --bg-primary: #C7EDCC; --bg-secondary: #B8D9BE; --bg-card: #D4F0D8;
-    --bg-code: #E2F5E5; --text-primary: #2C3E2D; --text-secondary: #4A5D4B;
-    --text-muted: #6B7F6C; --border-color: #A8C8AD; --accent: #4A7C59;
-    --accent-dark: #3A6347; --accent-light: #6B9F7A; --shadow: rgba(60,80,60,0.12);
-  }
-
-  html, body {
-    height: 100%; font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',system-ui,-apple-system,sans-serif;
-    background: var(--bg-primary); color: var(--text-primary); line-height: 1.7;
-    -webkit-font-smoothing: antialiased;
-  }
-
-  .anticon{display:inline-flex;align-items:center;color:inherit;font-style:normal;line-height:0;text-align:center;text-transform:none;vertical-align:-0.125em;text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}.anticon >*{line-height:1;}.anticon svg{display:inline-block;}
-
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--accent-light); }
-
-  .app-container { display: flex; flex-direction: column; height: 100vh; max-width: 100vw; overflow: hidden; }
-
-  .toolbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 20px; background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color); flex-shrink: 0; gap: 12px; flex-wrap: wrap;
-  }
-  .toolbar-left { display: flex; align-items: center; gap: 12px; }
-  .toolbar-title { font-size: 16px; font-weight: 600; color: var(--text-primary); letter-spacing: 0.3px; }
-  .toolbar-title .icon { margin-right: 6px; }
-  .toolbar-actions { display: flex; align-items: center; gap: 8px; }
-
-  .btn {
-    display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px;
-    border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-card);
-    color: var(--text-primary); font-family: inherit; font-size: 13px; font-weight: 500;
-    cursor: pointer; transition: all 0.3s ease; user-select: none; white-space: nowrap;
-  }
-  .btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn:active { transform: scale(0.97); }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-primary:hover { background: var(--accent-light); border-color: var(--accent-light); }
-
-  .main-area { flex: 1; display: flex; overflow: hidden; min-height: 0; }
-
-  .editor-panel {
-    flex: 1; display: flex; flex-direction: column; min-width: 0;
-    border-right: 1px solid var(--border-color);
-  }
-  .editor-header, .preview-header {
-    padding: 8px 16px; font-size: 12px; font-weight: 500; color: var(--text-muted);
-    background: var(--bg-secondary); border-bottom: 1px solid var(--border-color);
-    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
-  }
-  .preview-header { position: sticky; top: 0; z-index: 5; }
-  .preview-header .anticon { font-size: 13px; }
-  #modeLabel { font-size: 11px; background: var(--bg-card); padding: 2px 10px; border-radius: 10px; border: 1px solid var(--border-color); color: var(--accent); font-weight: 500; }
-  .editor-textarea {
-    flex: 1; width: 100%; padding: 20px; border: none; outline: none; resize: none;
-    font-family: 'JetBrains Mono','Fira Code','Consolas',monospace;
-    font-size: 14px; line-height: 1.8; color: var(--text-primary); background: var(--bg-primary);
-    tab-size: 2;
-  }
-  .editor-textarea::placeholder { color: var(--text-muted); opacity: 0.6; }
-  .char-count { font-size: 11px; color: var(--text-muted); }
-
-  .preview-panel {
-    flex: 1; overflow-y: auto; padding: 24px 32px; background: var(--bg-primary);
-    min-width: 0; position: relative;
-  }
-
-  .preview-immersion-float { position: sticky; bottom: 16px; text-align: center; margin-top: 16px; pointer-events: none; z-index: 10; }
-  .preview-immersion-float .btn {
-    pointer-events: auto; box-shadow: 0 4px 16px var(--shadow); padding: 10px 24px;
-    font-size: 14px; border-radius: 24px; background: var(--accent); color: #fff; border-color: var(--accent);
-  }
-  .preview-immersion-float .btn:hover { background: var(--accent-dark); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(74,124,89,0.3); }
-
-  .markdown-body { max-width: 800px; margin: 0 auto; font-size: 15px; color: var(--text-primary); transform-origin: top center; }
-  .markdown-body h1,.markdown-body h2,.markdown-body h3,.markdown-body h4 { color: var(--text-primary); font-weight: 600; line-height: 1.4; margin-top: 1.6em; margin-bottom: 0.6em; }
-  .markdown-body h1 { font-size: 1.8em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3em; }
-  .markdown-body h2 { font-size: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; }
-  .markdown-body h3 { font-size: 1.25em; } .markdown-body h4 { font-size: 1.1em; }
-  .markdown-body p { margin-bottom: 1em; }
-  .markdown-body a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
-  .markdown-body a:hover { color: var(--accent-light); }
-  .markdown-body strong { font-weight: 700; } .markdown-body em { font-style: italic; }
-  .markdown-body ul,.markdown-body ol { margin-bottom: 1em; padding-left: 2em; }
-  .markdown-body li { margin-bottom: 0.3em; }
-  .markdown-body blockquote {
-    margin: 1em 0; padding: 0.8em 1.2em; border-left: 4px solid var(--accent);
-    background: var(--bg-card); border-radius: 0 8px 8px 0; color: var(--text-secondary);
-  }
-  .markdown-body code {
-    font-family: 'JetBrains Mono','Fira Code','Consolas',monospace;
-    font-size: 0.88em; padding: 0.2em 0.4em; background: var(--bg-code); border-radius: 4px; color: var(--text-primary);
-  }
-
-  /* ===== 行内代码点击复制 ===== */
-  .inline-code-wrapper {
-    position: relative; display: inline-flex; align-items: center;
-    background: var(--bg-code); border-radius: 4px; padding: 0.2em 0.4em;
-    margin: 0 0.1em;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    user-select: none;
-  }
-  .inline-code-wrapper:hover {
-    background: var(--accent-light);
-  }
-  .inline-code-wrapper code {
-    background: none; padding: 0; margin-right: 0;
-  }
-  .markdown-body pre {
-    margin: 1em 0; padding: 16px 20px; background: var(--bg-card);
-    border: 1px solid var(--border-color); border-radius: 8px; overflow-x: auto;
-  }
-  .markdown-body pre code { background: none; padding: 0; font-size: 0.88em; line-height: 1.6; color: var(--text-primary); }
-
-  /* ===== 代码块复制按钮 ===== */
-  .code-block-wrapper {
-    position: relative; margin: 1em 0;
-  }
-  .code-copy-btn {
-    position: absolute; top: 8px; right: 8px;
-    width: 32px; height: 32px; border-radius: 6px;
-    background: var(--bg-primary); border: 1px solid var(--border-color);
-    color: var(--text-muted); font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: all 0.2s ease; z-index: 5;
-    backdrop-filter: blur(4px);
-  }
-  .code-block-wrapper:hover .code-copy-btn { opacity: 0.7; }
-  .code-copy-btn:hover { opacity: 1 !important; background: var(--accent); color: #fff; border-color: var(--accent); }
-  .code-copy-btn.copied { background: var(--accent); color: #fff; border-color: var(--accent); opacity: 1 !important; }
-  .markdown-body hr { border: none; border-top: 1px solid var(--border-color); margin: 1.5em 0; }
-  .markdown-body table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-  .markdown-body th,.markdown-body td { padding: 8px 12px; border: 1px solid var(--border-color); text-align: left; }
-  .markdown-body th { background: var(--bg-card); font-weight: 600; }
-  .markdown-body tr:nth-child(even) { background: var(--bg-card); }
-  .markdown-body img { max-width: 100%; border-radius: 8px; margin: 0.5em 0; }
-  .markdown-body input[type="checkbox"] { accent-color: var(--accent); margin-right: 6px; }
-
-  .mermaid-wrapper {
-    position: relative; margin: 1.2em 0; padding: 12px;
-    background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 12px; overflow: hidden; transition: border-color 0.3s ease, box-shadow 0.3s ease;
-  }
-  .mermaid-wrapper:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(74,124,89,0.15); }
-  .mermaid-chart-placeholder {
-    display: flex; justify-content: center; align-items: center;
-    min-height: 60px; overflow-x: auto;
-  }
-  .mermaid-chart-placeholder svg { max-width: 100%; height: auto; }
-
-  .mermaid-fullscreen-btn {
-    position: absolute; top: 6px; right: 6px;
-    width: 30px; height: 30px; border-radius: 6px;
-    background: var(--bg-primary); border: 1px solid var(--border-color);
-    color: var(--text-muted); font-size: 14px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    opacity: 0; transition: all 0.25s ease; z-index: 5; backdrop-filter: blur(4px);
-  }
-  .mermaid-wrapper:hover .mermaid-fullscreen-btn { opacity: 0.8; }
-  .mermaid-fullscreen-btn:hover { opacity: 1 !important; background: var(--accent); color: #fff; border-color: var(--accent); }
-
-  .mermaid-modal {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: rgba(0,0,0,0.55); z-index: 999999;
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    opacity: 0; transition: opacity 0.3s ease;
-    backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
-  }
-  .mermaid-modal.active { display: flex; opacity: 1; }
-
-  .mermaid-modal-content {
-    position: relative; width: 95vw; height: 92vh;
-    background: var(--bg-card); border: 1px solid var(--border-color);
-    border-radius: 14px; padding: 40px 28px 28px 28px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
-    transform: scale(0.92); transition: transform 0.3s ease;
-  }
-  .mermaid-modal.active .mermaid-modal-content { transform: scale(1); }
-
-  /* 全屏弹窗内部的容器 - 覆盖全局 .mermaid-chart-placeholder 样式 */
-  #mermaidModalDiagram {
-    position: relative !important;
-    overflow: hidden !important;
-    cursor: grab !important;
-    user-select: none !important;
-    width: 100% !important;
-    height: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    display: block !important;
-  }
-  #mermaidModalDiagram.dragging { cursor: grabbing !important; }
-  /* SVG 在弹窗中采用绝对定位，由 JS 控制 transform */
-  #mermaidModalDiagram > svg {
-    position: absolute;
-    top: 0; left: 0;
-    width: auto; height: auto;
-    max-width: none; max-height: none;
-    transform-origin: 0 0;
-    will-change: transform;
-  }
-  /* 确保弹窗中的 SVG 初始可见，避免 overflow:hidden 将图片完全裁掉 */
-  #mermaidModalDiagram > svg.initial-visible {
-    position: static !important;
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-  }
-
-  .mermaid-modal-close {
-    position: absolute; top: 10px; right: 10px;
-    width: 34px; height: 34px; border-radius: 50%;
-    background: var(--bg-primary); border: 1px solid var(--border-color);
-    color: var(--text-primary); font-size: 16px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.25s ease; z-index: 10;
-  }
-  .mermaid-modal-close:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
-
-  .mermaid-modal-label { position: absolute; top: 14px; left: 20px; font-size: 11px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.5px; }
-  .mermaid-modal-zoom-indicator { position: absolute; bottom: 12px; right: 14px; font-size: 12px; font-weight: 600; color: var(--text-muted); background: var(--bg-primary); padding: 2px 10px; border-radius: 8px; border: 1px solid var(--border-color); z-index: 10; opacity: 0.8; pointer-events: none; }
-
-  .immersion-overlay {
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    background: var(--bg-primary); color: var(--text-primary);
-    z-index: 9999; display: none;
-    flex-direction: column; overflow: hidden; opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-  .immersion-overlay.active { display: flex; opacity: 1; }
-  .immersion-toolbar {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 24px; background: var(--bg-secondary);
-    border-bottom: 1px solid var(--border-color); flex-shrink: 0;
-    position: relative;
-  }
-  .immersion-toolbar .btn { background: transparent; }
-  .immersion-toolbar .btn:hover { background: var(--accent); }
-  .immersion-info { font-size: 13px; color: var(--text-muted); display: flex; align-items: center; gap: 8px; }
-  .immersion-content {
-    flex: 1; overflow: auto; padding: 48px 10%;
-    color: var(--text-primary); background: transparent;
-    position: relative;
-  }
-  .immersion-content .markdown-body { max-width: 720px; margin: 0 auto; font-size: 18px; line-height: 2; color: var(--text-primary); }
-  .immersion-content .markdown-body h1 { font-size: 2.2em; }
-  .immersion-content .markdown-body h2 { font-size: 1.8em; }
-  .immersion-content .markdown-body h3 { font-size: 1.4em; }
-  .immersion-content .markdown-body p { margin-bottom: 1.4em; }
-  .immersion-content .markdown-body blockquote { font-size: 1.1em; padding: 1em 1.6em; }
-  .immersion-content .markdown-body pre { font-size: 0.9em; padding: 20px 24px; }
-  .immersion-progress { position: absolute; top: 0; left: 0; height: 3px; background: var(--accent); width: 0%; transition: width 0.1s linear; z-index: 1; }
-
-  #themeSelect option { background: var(--bg-card); color: var(--text-primary); }
-
-  .zoom-controls { display: flex; align-items: center; gap: 6px; }
-  .zoom-controls .zoom-indicator { font-size: 12px; font-weight: 600; color: var(--accent); min-width: 42px; text-align: center; font-variant-numeric: tabular-nums; }
-  .zoom-controls .btn { font-size: 14px; font-weight: 600; }
-
-  .empty-hint { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 14px; gap: 8px; opacity: 0.6; }
-  .empty-hint .icon { font-size: 36px; }
-
-  .toast {
-    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--text-primary); color: var(--bg-primary); padding: 10px 24px;
-    border-radius: 8px; font-size: 13px; font-weight: 500; opacity: 0;
-    transition: all 0.3s ease; z-index: 99999; pointer-events: none;
-  }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .zoom-flash {
-    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    background: var(--text-primary); color: var(--bg-primary); padding: 12px 28px;
-    border-radius: 12px; font-size: 24px; font-weight: 700; opacity: 0;
-    pointer-events: none; z-index: 999999; transition: opacity 0.15s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  }
-  .zoom-flash.show { opacity: 0.9; }
-
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .markdown-body > * { animation: fadeIn 0.3s ease forwards; }
-  .markdown-body > *:nth-child(1) { animation-delay: 0.02s; }
-  .markdown-body > *:nth-child(2) { animation-delay: 0.04s; }
-  .markdown-body > *:nth-child(3) { animation-delay: 0.06s; }
-
-  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-  .immersion-overlay.active .immersion-content { animation: slideUp 0.5s ease forwards; }
-
-  .scroll-top-btn {
-    position: fixed; bottom: 80px; right: 20px; width: 40px; height: 40px; border-radius: 50%;
-    background: var(--accent); color: #fff; border: none; font-size: 18px; cursor: pointer;
-    opacity: 0; transition: all 0.3s ease; z-index: 100; box-shadow: 0 2px 12px var(--shadow); display: none;
-  }
-  .scroll-top-btn.visible { opacity: 0.8; display: block; }
-  .scroll-top-btn.visible:hover { opacity: 1; transform: translateY(-2px); }
-
-  /* ===== 沉浸内容容器 - 为退出按钮留出右侧空间 ===== */
-  .immersion-content-inner {
-    max-width: 768px; margin: 0 auto;
-    display: flex; align-items: flex-start;
-    padding-right: 48px; /* 为右侧的 sticky X 按钮预留空间 */
-    position: relative;
-  }
-  .immersion-content-inner .markdown-body {
-    flex: 1; min-width: 0;
-  }
-  /* ===== 退出按钮 - sticky 固定在右侧，紧贴文本但不重叠 ===== */
-  .immersion-content-exit {
-    position: sticky; top: 20px; z-index: 10;
-    flex-shrink: 0; width: 36px; height: 36px;
-    border-radius: 50%;
-    background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border-color);
-    font-size: 16px; font-weight: 700; cursor: pointer; line-height: 36px; text-align: center;
-    transition: all 0.2s ease; opacity: 0.7;
-    margin-top: 4px; margin-left: 8px;
-  }
-  .immersion-content-exit:hover { background: #c0392b; color: #fff; border-color: #c0392b; opacity: 1; }
-
-  @media (max-width: 768px) {
-    .main-area { flex-direction: column; }
-    .editor-panel { border-right: none; border-bottom: 1px solid var(--border-color); max-height: 40vh; }
-    #modeLabel { display: none; }
-    .preview-panel { padding: 16px; } .toolbar { padding: 8px 12px; }
-    .immersion-content { padding: 24px 5%; } .immersion-content .markdown-body { font-size: 16px; }
-    .toolbar-title { font-size: 14px; }
-    .immersion-toolbar { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
-    .preview-immersion-float .btn { padding: 8px 18px; font-size: 13px; }
-    .zoom-controls .zoom-indicator { min-width: 36px; font-size: 11px; }
-    .mermaid-modal-content { width: 95vw; height: 88vh; padding: 36px 16px 16px 16px; }
-    .immersion-content-inner { padding-right: 0; }
-    .immersion-content-exit {
-      position: fixed; top: auto; bottom: 20px; right: 20px;
-      margin: 0;
-      box-shadow: 0 4px 16px var(--shadow);
-      width: 44px; height: 44px; line-height: 44px; font-size: 18px;
-      background: var(--accent); color: #fff; border-color: var(--accent);
-      opacity: 0.9;
-    }
-  }
-  @media (max-width: 480px) {
-    .btn span.label { display: none; } .preview-panel { padding: 12px; }
-    .editor-textarea { padding: 12px; font-size: 13px; }
-  }
-
-  .mermaid-error {
-    padding: 20px; text-align: center; color: var(--text-muted);
-    font-size: 13px; font-style: italic;
-  }
-  .mermaid-loading {
-    padding: 20px; text-align: center; color: var(--text-muted);
-    font-size: 13px;
-  }
-
-  /* Mermaid source text container - hidden visually but read by mermaid.run() */
-  .mermaid-source-data {
-    display: none;
-  }
+body { font-family: sans-serif; padding: 2rem; max-width: 800px; margin: 0 auto; line-height: 1.6; }
+table { border-collapse: collapse; width: 100%; }
+th, td { border: 1px solid #ccc; padding: 8px; }
+pre { background: #f4f4f4; padding: 1rem; border-radius: 4px; }
 </style>
 </head>
 <body>
-
-<div class="app-container">
-  <header class="toolbar">
-    <div class="toolbar-left">
-      <span class="toolbar-title"><span class="icon">📖</span> 护眼 MD 阅读器</span>
-      <button class="btn btn-primary" id="immersionBtn" title="沉浸式阅读 (Ctrl+右键 / Ctrl+Shift+I)"><span>📖</span><span class="label">沉浸阅读</span></button>
-    </div>
-    <div class="toolbar-actions">
-      <select id="themeSelect" style="font-family:inherit;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);cursor:pointer;outline:none;">
-        <option value="green">🌿 豆沙绿</option>
-        <option value="warm">📜 暖黄纸</option>
-        <option value="sky">🌤 天空蓝</option>
-        <option value="lavender">💜 淡紫灰</option>
-        <option value="apricot">🍑 暖杏</option>
-      </select>
-    </div>
-  </header>
-
-  <div class="main-area">
-    <div class="editor-panel">
-      <div class="editor-header">
-        <span><span class="anticon"><svg viewBox="64 64 896 896" focusable="false" data-icon="edit" width="1em" height="1em" fill="currentColor" aria-hidden="true"><path d="M880 836H144c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h736c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm-643.6-92c4.4 0 8-3.5 8-8V569.6c0-2.1-.8-4.2-2.3-5.7L127.6 349.4c-3.1-3.1-8.2-3.1-11.3 0L2.3 475.6c-1.5 1.5-2.3 3.6-2.3 5.7V736c0 4.4 3.6 8 8 8h228.4zm52.8-378.4l226.4 226.4c3.1 3.1 8.2 3.1 11.3 0l296.4-296.4c3.1-3.1 3.1-8.2 0-11.3L599.6 163.2c-3.1-3.1-8.2-3.1-11.3 0L291.8 459.6c-1.5 1.5-2.3 3.6-2.3 5.7v4.8c0 4.4 3.6 8 8 8h4.8c2.1 0 4.2-.8 5.7-2.3z"></path></svg></span> Markdown 编辑器</span>
-        <span class="char-count" id="charCount">0 字符</span>
-      </div>
-      <textarea class="editor-textarea" id="editor" placeholder="在此输入 Markdown 内容…&#10;例如： # 标题&#10;&#10;支持 **粗体**、*斜体*、`代码` 等语法。"></textarea>
-    </div>
-    <div class="preview-panel" id="previewPanel">
-      <div class="markdown-body" id="preview"></div>
-      <div class="preview-immersion-float" id="previewFloatBtn">
-        <button class="btn" id="previewImmersionBtn">📖 进入沉浸式阅读</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="immersion-overlay" id="immersionOverlay">
-  <div class="immersion-progress" id="immersionProgress"></div>
-  <div class="immersion-toolbar">
-    <span class="immersion-info">
-      📖 沉浸式阅读 · 豆沙绿
-      <span id="immersionWordCount" style="font-size:11px;opacity:0.6;margin-left:8px;"></span>
-    </span>
-    <div class="zoom-controls">
-      <button class="btn" id="zoomOutBtn" title="缩小 (Ctrl+滚轮向下)">🔍 −</button>
-      <span class="zoom-indicator" id="zoomIndicator">100%</span>
-      <button class="btn" id="zoomResetBtn" title="重置缩放">100%</button>
-      <button class="btn" id="zoomInBtn" title="放大 (Ctrl+滚轮向上)">🔍 +</button>
-
-    </div>
-  </div>
-  <div class="immersion-content" id="immersionContent">
-    <div class="immersion-content-inner">
-      <div class="markdown-body" id="immersionPreview"></div>
-      <button class="immersion-content-exit" id="immersionContentExit" title="退出沉浸模式 (Esc)">✕</button>
-    </div>
-  </div>
-  <button class="scroll-top-btn" id="scrollTopBtn" title="回到顶部">⬆</button>
-</div>
-
-<div class="mermaid-modal" id="mermaidModal">
-  <div class="mermaid-modal-content" id="mermaidModalContent">
-    <span class="mermaid-modal-label">📊 Mermaid 图表</span>
-    <button class="mermaid-modal-close" id="mermaidModalClose" title="关闭 (Esc)">✕</button>
-    <span class="mermaid-modal-zoom-indicator" id="mermaidModalZoom">100%</span>
-    <div class="mermaid-chart-placeholder" id="mermaidModalDiagram"></div>
-  </div>
-</div>
-
-<div class="zoom-flash" id="zoomFlash">100%</div>
-<div class="toast" id="toast"></div>
-
-<script>
-(function() {
-  'use strict';
-
-  // ===== DOM 引用 =====
-  const editor = document.getElementById('editor');
-  const preview = document.getElementById('preview');
-  const immersionPreview = document.getElementById('immersionPreview');
-  const immersionOverlay = document.getElementById('immersionOverlay');
-  const immersionContent = document.getElementById('immersionContent');
-  const immersionProgress = document.getElementById('immersionProgress');
-  const wordCountEl = document.getElementById('immersionWordCount');
-  const immersionBtn = document.getElementById('immersionBtn');
-  const previewImmersionBtn = document.getElementById('previewImmersionBtn');
-  // const loadSampleBtn = document.getElementById('loadSampleBtn');
-  // const clearBtn = document.getElementById('clearBtn');
-  const toastEl = document.getElementById('toast');
-  const zoomInBtn = document.getElementById('zoomInBtn');
-  const zoomOutBtn = document.getElementById('zoomOutBtn');
-  const zoomResetBtn = document.getElementById('zoomResetBtn');
-  const zoomIndicator = document.getElementById('zoomIndicator');
-  const zoomFlash = document.getElementById('zoomFlash');
-  const scrollTopBtn = document.getElementById('scrollTopBtn');
-  const immersionContentExit = document.getElementById('immersionContentExit');
-  const charCountEl = document.getElementById('charCount');
-  const mermaidModal = document.getElementById('mermaidModal');
-  const mermaidModalDiagram = document.getElementById('mermaidModalDiagram');
-  const mermaidModalClose = document.getElementById('mermaidModalClose');
-  const mermaidModalZoom = document.getElementById('mermaidModalZoom');
-
-  // ===== 状态 =====
-  let isImmersion = false;
-  let zoomLevel = 100;
-  let mermaidModalZoomLevel = 100;
-  let toastTimer = null;
-  let zoomFlashTimer = null;
-  let mermaidIdCounter = 0;
-  let mermaidReady = false;
-
-  // ===== 工具函数 =====
-  function escapeHtml(str) {
-    var div = document.createElement('div');
-    div.appendChild(document.createTextNode(str));
-    return div.innerHTML;
-  }
-
-  // ===== Mermaid 初始化 =====
-  function initMermaid() {
-    try {
-      if (typeof mermaid !== 'undefined' && mermaid && mermaid.initialize) {
-        mermaid.initialize({
-          startOnLoad: false,
-          securityLevel: 'loose',
-          theme: 'base',
-          themeVariables: {
-            background: 'transparent',
-            primaryColor: '#4A7C59',
-            secondaryColor: '#B8D9BE',
-            tertiaryColor: '#D4F0D8',
-            primaryBorderColor: '#4A7C59',
-            secondaryBorderColor: '#A8C8AD',
-            tertiaryBorderColor: '#A8C8AD',
-            lineColor: '#4A7C59',
-            textColor: '#2C3E2D',
-            mainBkg: '#D4F0D8',
-            nodeBorder: '#4A7C59',
-            clusterBkg: '#E2F5E5',
-            clusterBorder: '#A8C8AD',
-            titleColor: '#2C3E2D',
-            edgeLabelBackground: '#D4F0D8',
-            nodeTextColor: '#2C3E2D',
-          },
-          flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' },
-          sequence: { showSequenceNumbers: false },
+${previewContent.innerHTML}
+</body>
+</html>`;
+            const blob = new Blob([fullHtml], { type: 'text/html' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'eyecare-document.html';
+            a.click();
         });
-        mermaidReady = true;
-      }
-    } catch(e) {
-      console.warn('Mermaid init:', e);
-      mermaidReady = false;
-    }
-  }
-  initMermaid();
 
-  // ===== Markdown 自定义渲染器（核心修复：直接拦截 mermaid 代码块） =====
-  var renderer = new marked.Renderer();
-  var originalCodeRenderer = renderer.code;
+        document.getElementById('export-print').addEventListener('click', () => {
+            window.print();
+        });
 
-  renderer.code = function(code, language) {
-    var text = code;
-    var lang = language || '';
+        // Live input event listener
+        markdownInput.addEventListener('input', renderMarkdown);
 
-    if (lang === 'mermaid') {
-      var id = 'mermaid-' + (++mermaidIdCounter);
-      var escapedText = escapeHtml(text);
-      return '<div class="mermaid-wrapper" id="' + id + '">' +
-        '<button class="mermaid-fullscreen-btn" data-mermaid-target="' + id + '" title="全屏查看">⛶</button>' +
-        '<div class="mermaid-chart-placeholder" id="' + id + '-chart"></div>' +
-        '<pre class="mermaid-source-data">' + escapedText + '</pre>' +
-        '</div>';
-    }
-
-    var langAttr = lang ? ' class="language-' + escapeHtml(lang) + '"' : '';
-    return '<div class="code-block-wrapper">' +
-        '<button class="code-copy-btn" title="复制代码">📋</button>' +
-        '<pre><code' + langAttr + '>' + escapeHtml(text) + '</code></pre>' +
-        '</div>';
-  };
-
-  marked.use({ renderer: renderer });
-  marked.setOptions({ breaks: true, gfm: true });
-
-  // ===== Toast =====
-  function showToast(msg) {
-    if (toastTimer) clearTimeout(toastTimer);
-    toastEl.textContent = msg;
-    toastEl.classList.add('show');
-    toastTimer = setTimeout(function() { toastEl.classList.remove('show'); }, 2000);
-  }
-
-  // ===== 沉浸模式缩放（像浏览器缩放一样撑开内容区） =====
-  const immersionContentInner = document.querySelector('.immersion-content-inner');
-  function applyZoom(level) {
-    zoomLevel = Math.min(200, Math.max(50, level));
-    var scale = zoomLevel / 100;
-
-    // 用 CSS zoom 缩放文字（不破坏 sticky 定位）
-    immersionPreview.style.zoom = zoomLevel + '%';
-
-    // 随缩放比例动态增加容器 max-width，让内容填满可用宽度
-    var baseMaxWidth = 768;
-    immersionContentInner.style.maxWidth = Math.round(baseMaxWidth * scale) + 'px';
-    immersionContentInner.style.width = '';  // 清除之前 transform 方案遗留的宽度
-    immersionContentInner.style.transform = 'none';  // 清除 transform
-
-    // 缩小 padding 以减少空白浪费
-    var basePadV = 48;
-    var scaledPadV = Math.max(12, Math.round(basePadV / scale));
-    var basePadH = 10;
-    var scaledPadH = Math.max(1, Math.round(basePadH / scale));
-    immersionContent.style.padding = scaledPadV + 'px ' + scaledPadH + '%';
-
-    // 退出按钮也一起缩放
-    immersionContentExit.style.zoom = zoomLevel + '%';
-
-    zoomIndicator.textContent = zoomLevel + '%';
-  }
-  function showZoomFlash(level) {
-    if (zoomFlashTimer) clearTimeout(zoomFlashTimer);
-    zoomFlash.textContent = level + '%';
-    zoomFlash.classList.add('show');
-    zoomFlashTimer = setTimeout(function() { zoomFlash.classList.remove('show'); }, 600);
-  }
-  function zoomIn() {
-    var rect = immersionContent.getBoundingClientRect();
-    var mouseX = rect.width / 2;
-    var mouseY = rect.height / 2;
-    var l = Math.min(200, zoomLevel + 10);
-    applyZoom(l, mouseX, mouseY);
-    showZoomFlash(zoomLevel);
-    showToast('🔍 已放大: ' + zoomLevel + '%');
-  }
-  function zoomOut() {
-    var rect = immersionContent.getBoundingClientRect();
-    var mouseX = rect.width / 2;
-    var mouseY = rect.height / 2;
-    var l = Math.max(50, zoomLevel - 10);
-    applyZoom(l, mouseX, mouseY);
-    showZoomFlash(zoomLevel);
-    showToast('🔍 已缩小: ' + zoomLevel + '%');
-  }
-  function zoomReset() {
-    applyZoom(100);
-    immersionContent.scrollLeft = 0;
-    immersionContent.scrollTop = 0;
-    showZoomFlash(100);
-    showToast('🔍 已重置为 100%');
-  }
-
-  // ===== 渲染 Mermaid 图表 =====
-  function renderMermaidDiagrams(container) {
-    if (!mermaidReady) return;
-
-    var wrappers = container.querySelectorAll('.mermaid-wrapper');
-    var pending = [];
-
-    for (var i = 0; i < wrappers.length; i++) {
-      var wrapper = wrappers[i];
-      if (wrapper.getAttribute('data-mermaid-rendered') === 'true') continue;
-      var pre = wrapper.querySelector('pre.mermaid-source-data');
-      if (!pre) continue;
-      var text = (pre.textContent || '').trim();
-      if (!text) continue;
-      pre.setAttribute('data-mermaid-src', text);
-      pending.push({ wrapper: wrapper, pre: pre, text: text });
-    }
-
-    if (pending.length === 0) return;
-
-    pending.forEach(function(item) {
-      var id = 'mm-' + (++mermaidIdCounter);
-      mermaid.render(id, item.text).then(function(result) {
-        var chartContainer = item.wrapper.querySelector('.mermaid-chart-placeholder');
-        if (chartContainer) {
-          chartContainer.innerHTML = result.svg;
-        }
-        item.wrapper.setAttribute('data-mermaid-rendered', 'true');
-      }).catch(function(err) {
-        console.warn('Mermaid error:', err);
-        var chartContainer = item.wrapper.querySelector('.mermaid-chart-placeholder');
-        if (chartContainer) {
-          chartContainer.innerHTML = '<div class="mermaid-error">⚠️ 图表渲染失败: ' + escapeHtml(err.message || '') + '</div>';
-        }
-        item.wrapper.setAttribute('data-mermaid-rendered', 'true');
-      });
-    });
-  }
-
-  // ===== Markdown 渲染 =====
-  function renderMarkdown(text) {
-    if (!text || text.trim() === '') {
-      return '<div class="empty-hint"><span class="icon">📝</span><span>输入 Markdown 内容后预览</span></div>';
-    }
-    try {
-      return marked.parse(text);
-    } catch (e) {
-      return '<p style="color:#c0392b;">⚠️ 渲染错误: ' + escapeHtml(e.message || '') + '</p>';
-    }
-  }
-
-  function updatePreview() {
-    var content = editor.value;
-    var html = renderMarkdown(content);
-    preview.innerHTML = html;
-    immersionPreview.innerHTML = html;
-    var len = content.length;
-    charCountEl.textContent = len + ' 字符';
-    var words = content.replace(/\s/g, '').length;
-    wordCountEl.textContent = '| ' + words + ' 字';
-    if (mermaidReady) {
-      setTimeout(function() {
-        renderMermaidDiagrams(preview);
-        renderMermaidDiagrams(immersionPreview);
-      }, 100);
-    }
-    // 为行内代码添加复制按钮
-    setTimeout(addInlineCodeCopyButtons, 50);
-  }
-
-  // ===== 行内代码复制按钮辅助函数 =====
-  function addInlineCodeCopyButtons() {
-    var bodies = [preview, immersionPreview];
-    bodies.forEach(function(body) {
-      if (!body) return;
-      var codes = body.querySelectorAll('code');
-      codes.forEach(function(code) {
-        // 跳过代码块里的 code
-        if (code.closest('pre') || code.closest('.mermaid-wrapper')) return;
-        // 跳过已经包裹的
-        if (code.parentElement && code.parentElement.classList.contains('inline-code-wrapper')) return;
-        
-        var text = code.textContent;
-        var wrapper = document.createElement('span');
-        wrapper.className = 'inline-code-wrapper';
-        wrapper.setAttribute('data-inline-code', text);
-        wrapper.title = '点击复制';
-        
-        var codeClone = code.cloneNode(true);
-        wrapper.appendChild(codeClone);
-        
-        code.parentNode.replaceChild(wrapper, code);
-      });
-    });
-  }
-
-  var debounceTimer = null;
-  function debouncedUpdate() {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(updatePreview, 200);
-  }
-
-  // ===== Mermaid 全屏弹窗（左键拖拽 + Ctrl+滚轮以鼠标位置缩放） =====
-  function openMermaidFullscreen(chartId) {
-    var sourceEl = document.getElementById(chartId);
-    if (!sourceEl) {
-      var wrapper = document.querySelector('[data-mermaid-id="' + chartId + '"]');
-      if (wrapper) sourceEl = wrapper.querySelector('.mermaid-chart-placeholder');
-    }
-    if (!sourceEl) return;
-    var srcSvg = sourceEl.querySelector('svg');
-    if (!srcSvg) { showToast('⚠️ 图表尚未渲染完成'); return; }
-
-    // 克隆 SVG
-    var svg = srcSvg.cloneNode(true);
-    // 清空容器，用 display:block 覆盖 flex 居中
-    mermaidModalDiagram.innerHTML = '';
-    mermaidModalDiagram.style.display = 'block';
-    // 先以 static 方式放入 SVG，确保可见（避免 overflow:hidden 裁掉图片）
-    svg.classList.add('initial-visible');
-    mermaidModalDiagram.appendChild(svg);
-    mermaidModal.classList.add('active');
-    document.body.style.overflow = 'hidden';
-
-    // 解析 SVG 自然尺寸（从 viewBox 或 width/height）
-    var vb = svg.getAttribute('viewBox') || '';
-    var vbParts = vb.split(/\s+/).filter(function(s) { return s.length > 0; });
-    var naturalW, naturalH;
-    if (vbParts.length >= 4) {
-      naturalW = parseFloat(vbParts[2]);
-      naturalH = parseFloat(vbParts[3]);
-    } else {
-      naturalW = parseFloat(svg.getAttribute('width')) || 800;
-      naturalH = parseFloat(svg.getAttribute('height')) || 600;
-    }
-
-    // 状态变量
-    var modalZoom = 100;
-    var tx = 0, ty = 0;
-
-    function applyTransform() {
-      // 移除 initial-visible 类，切换到绝对定位模式
-      svg.classList.remove('initial-visible');
-      var scale = modalZoom / 100;
-      svg.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
-      svg.style.transformOrigin = '0 0';
-      mermaidModalZoom.textContent = modalZoom + '%';
-    }
-
-    function centerSvg() {
-      var cw = mermaidModalDiagram.clientWidth;
-      var ch = mermaidModalDiagram.clientHeight;
-      if (cw > 0 && ch > 0) {
-        tx = (cw - naturalW) / 2;
-        ty = (ch - naturalH) / 2;
-      } else {
-        tx = 0; ty = 0;
-      }
-      applyTransform();
-    }
-
-    // 先等一帧让布局稳定，再切换到绝对定位模式
-    requestAnimationFrame(function() {
-      requestAnimationFrame(centerSvg);
-    });
-
-    // === 左键拖拽 ===
-    var isDown = false;
-    var startX, startY, startTx, startTy;
-
-    function onDown(e) {
-      if (e.button !== 0) return;
-      isDown = true;
-      mermaidModalDiagram.classList.add('dragging');
-      startX = e.clientX;
-      startY = e.clientY;
-      startTx = tx;
-      startTy = ty;
-      e.preventDefault();
-    }
-    function onMove(e) {
-      if (!isDown) return;
-      e.preventDefault();
-      tx = startTx + (e.clientX - startX);
-      ty = startTy + (e.clientY - startY);
-      applyTransform();
-    }
-    function onUp() {
-      isDown = false;
-      mermaidModalDiagram.classList.remove('dragging');
-    }
-    mermaidModalDiagram.addEventListener('mousedown', onDown);
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onUp);
-
-    // === Ctrl+滚轮以鼠标位置缩放（地图式） ===
-    function onWheel(e) {
-      if (!(e.ctrlKey || e.metaKey)) return;
-      e.preventDefault();
-
-      var rect = mermaidModalDiagram.getBoundingClientRect();
-      var mx = e.clientX - rect.left;
-      var my = e.clientY - rect.top;
-
-      var oldZoom = modalZoom;
-      var delta = e.deltaY > 0 ? -10 : 10;
-      modalZoom = Math.min(300, Math.max(50, modalZoom + delta));
-
-      // 鼠标在内容坐标系中的位置
-      var contentX = (mx - tx) / (oldZoom / 100);
-      var contentY = (my - ty) / (oldZoom / 100);
-      // 缩放后使该内容点仍在鼠标下方
-      tx = mx - contentX * (modalZoom / 100);
-      ty = my - contentY * (modalZoom / 100);
-
-      applyTransform();
-    }
-    document.addEventListener('wheel', onWheel, { passive: false });
-
-    // === 窗口 resize 重新居中 ===
-    var resizeTimer;
-    function onResize() {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(centerSvg, 100);
-    }
-    window.addEventListener('resize', onResize);
-
-    // === 清理 ===
-    svg._cleanup = function() {
-      mermaidModalDiagram.removeEventListener('mousedown', onDown);
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      document.removeEventListener('wheel', onWheel);
-      window.removeEventListener('resize', onResize);
-      svg.style.transform = '';
-      svg.style.transformOrigin = '';
-      mermaidModalDiagram.style.display = '';
-    };
-  }
-
-  function closeMermaidFullscreen() {
-    var svg = mermaidModalDiagram.querySelector('svg');
-    if (svg && svg._cleanup) {
-      svg._cleanup();
-    }
-    mermaidModalDiagram.innerHTML = '';
-    mermaidModal.classList.remove('active');
-    document.body.style.overflow = isImmersion ? 'hidden' : '';
-  }
-
-  // ===== 沉浸式阅读 =====
-  function enterImmersion() {
-    var content = editor.value;
-    if (!content.trim()) { showToast('⚠️ 请先输入一些 Markdown 内容'); return; }
-    updatePreview();
-    applyZoom(zoomLevel);
-    immersionContent.scrollLeft = 0;
-    immersionContent.scrollTop = 0;
-    immersionOverlay.classList.add('active');
-    isImmersion = true;
-    document.body.style.overflow = 'hidden';
-    updateImmersionProgress();
-  }
-  function exitImmersion() {
-    immersionOverlay.classList.remove('active');
-    isImmersion = false;
-    document.body.style.overflow = '';
-    scrollTopBtn.classList.remove('visible');
-  }
-
-  function updateImmersionProgress() {
-    if (!isImmersion) return;
-    var scrollTop = immersionContent.scrollTop;
-    var scrollHeight = immersionContent.scrollHeight - immersionContent.clientHeight;
-    var progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
-    immersionProgress.style.width = Math.min(100, progress) + '%';
-    if (scrollTop > 300) scrollTopBtn.classList.add('visible');
-    else scrollTopBtn.classList.remove('visible');
-  }
-  function scrollToTop() { immersionContent.scrollTo({ top: 0, behavior: 'smooth' }); }
-
-  // ===== 主题切换 =====
-  const themeSelect = document.getElementById('themeSelect');
-
-  const THEMES = {
-    green: {
-      bg: '#C7EDCC', bs: '#B8D9BE', bc: '#D4F0D8', bco: '#E2F5E5',
-      tp: '#2C3E2D', ts: '#4A5D4B', tm: '#6B7F6C', bo: '#A8C8AD',
-      ac: '#4A7C59', ad: '#3A6347', al: '#6B9F7A', sh: 'rgba(60,80,60,0.12)'
-    },
-    warm: {
-      bg: '#F5ECD7', bs: '#EBDFC5', bc: '#F8F0DF', bco: '#FBF5E8',
-      tp: '#4A3F2D', ts: '#6B5D45', tm: '#8B7D65', bo: '#D4C9B0',
-      ac: '#A67C52', ad: '#8B6345', al: '#C49A6C', sh: 'rgba(120,100,70,0.12)'
-    },
-    sky: {
-      bg: '#D6E8F0', bs: '#C4D8E6', bc: '#E2F0F8', bco: '#EFF6FB',
-      tp: '#2C3E4A', ts: '#4A5D6B', tm: '#6B7F8C', bo: '#B0C8D8',
-      ac: '#4A7C9F', ad: '#3A6380', al: '#6B9FC4', sh: 'rgba(60,80,100,0.12)'
-    },
-    lavender: {
-      bg: '#E6DCF0', bs: '#D8CCE6', bc: '#F0E8F8', bco: '#F5EFFB',
-      tp: '#3A2D4A', ts: '#5B4D6B', tm: '#7D6B8C', bo: '#C8B8D8',
-      ac: '#7C5A9F', ad: '#634A80', al: '#9C7AC4', sh: 'rgba(80,60,100,0.12)'
-    },
-    apricot: {
-      bg: '#F0E2D6', bs: '#E6D4C4', bc: '#F8ECE2', bco: '#FBF3EB',
-      tp: '#4A382D', ts: '#6B5545', tm: '#8B7260', bo: '#D4C0B0',
-      ac: '#B07A52', ad: '#8F6240', al: '#D0986C', sh: 'rgba(120,80,50,0.12)'
-    }
-  };
-
-  function applyTheme(themeKey) {
-    var t = THEMES[themeKey] || THEMES.green;
-    var root = document.documentElement;
-    root.style.setProperty('--bg-primary', t.bg);
-    root.style.setProperty('--bg-secondary', t.bs);
-    root.style.setProperty('--bg-card', t.bc);
-    root.style.setProperty('--bg-code', t.bco);
-    root.style.setProperty('--text-primary', t.tp);
-    root.style.setProperty('--text-secondary', t.ts);
-    root.style.setProperty('--text-muted', t.tm);
-    root.style.setProperty('--border-color', t.bo);
-    root.style.setProperty('--accent', t.ac);
-    root.style.setProperty('--accent-dark', t.ad);
-    root.style.setProperty('--accent-light', t.al);
-    root.style.setProperty('--shadow', t.sh);
-
-    // Update immersion info label
-    var labels = { green:'豆沙绿', warm:'暖黄纸', sky:'天空蓝', lavender:'淡紫灰', apricot:'暖杏' };
-    var infoText = document.querySelector('.immersion-info');
-    if (infoText) infoText.innerHTML = '📖 沉浸式阅读 · ' + (labels[themeKey] || '豆沙绿');
-
-    showToast('🎨 已切换为 ' + (labels[themeKey] || '') + ' 主题');
-  }
-
-  themeSelect.addEventListener('change', function() {
-    applyTheme(this.value);
-  });
-
-  // ===== 快捷键 =====
-  function handleKeyboard(e) {
-    if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'i' || e.key === 'I')) {
-      e.preventDefault();
-      if (isImmersion) exitImmersion(); else enterImmersion();
-    }
-    if (e.key === 'Escape') {
-      if (mermaidModal.classList.contains('active')) { closeMermaidFullscreen(); e.preventDefault(); return; }
-      if (isImmersion) { exitImmersion(); e.preventDefault(); }
-    }
-  }
-
-  function handleWheelZoom(e) {
-    if (!isImmersion) return;
-    if (mermaidModal.classList.contains('active')) return;
-    if (!(e.ctrlKey || e.metaKey)) return;
-    e.preventDefault();
-
-    var rect = immersionContent.getBoundingClientRect();
-    var mouseX = e.clientX - rect.left;
-    var mouseY = e.clientY - rect.top;
-    mouseX = Math.max(0, Math.min(rect.width, mouseX));
-    mouseY = Math.max(0, Math.min(rect.height, mouseY));
-
-    var delta = e.deltaY > 0 ? -10 : 10;
-    var newLevel = Math.min(200, Math.max(50, zoomLevel + delta));
-    applyZoom(newLevel, mouseX, mouseY);
-    showZoomFlash(zoomLevel);
-  }
-
-  // ===== 事件绑定 =====
-  editor.addEventListener('input', debouncedUpdate);
-
-  immersionBtn.addEventListener('click', enterImmersion);
-  previewImmersionBtn.addEventListener('click', enterImmersion);
-
-  zoomInBtn.addEventListener('click', zoomIn);
-  zoomOutBtn.addEventListener('click', zoomOut);
-  zoomResetBtn.addEventListener('click', zoomReset);
-
-  // loadSampleBtn.addEventListener('click', loadSample);
-  // clearBtn.addEventListener('click', clearContent);
-
-  document.addEventListener('keydown', handleKeyboard);
-  // Ctrl+鼠标右键 快速进入沉浸阅读
-  document.addEventListener('contextmenu', function(e) {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      if (isImmersion) { exitImmersion(); } else { enterImmersion(); }
-    }
-  });
-
-  document.addEventListener('wheel', handleWheelZoom, { passive: false });
-
-  immersionContent.addEventListener('scroll', updateImmersionProgress);
-  scrollTopBtn.addEventListener('click', scrollToTop);
-  immersionContentExit.addEventListener('click', exitImmersion);
-
-  // ===== 代码块复制功能 =====
-  document.addEventListener('click', function(e) {
-    // 代码块复制
-    var copyBtn = e.target.closest('.code-copy-btn');
-    if (copyBtn) {
-      var wrapper = copyBtn.closest('.code-block-wrapper');
-      var codeEl = wrapper.querySelector('code');
-      var codeText = codeEl.textContent;
-      navigator.clipboard.writeText(codeText).then(function() {
-        copyBtn.classList.add('copied');
-        copyBtn.textContent = '✅';
-        showToast('📋 代码已复制');
-        setTimeout(function() {
-          copyBtn.classList.remove('copied');
-          copyBtn.textContent = '📋';
-        }, 1500);
-      }).catch(function(err) {
-        console.warn('Copy failed:', err);
-        showToast('⚠️ 复制失败');
-      });
-    }
-
-    // 行内代码复制
-    var inlineWrapper = e.target.closest('.inline-code-wrapper');
-    if (inlineWrapper) {
-      var codeText = inlineWrapper.getAttribute('data-inline-code');
-      navigator.clipboard.writeText(codeText).then(function() {
-        showToast('📋 已复制');
-      }).catch(function(err) {
-        console.warn('Copy failed:', err);
-        showToast('⚠️ 复制失败');
-      });
-    }
-
-    var mermaidBtn = e.target.closest('.mermaid-fullscreen-btn');
-    if (mermaidBtn) {
-      var targetId = mermaidBtn.dataset.mermaidTarget;
-      if (targetId) openMermaidFullscreen(targetId);
-    }
-  });
-
-  mermaidModalClose.addEventListener('click', closeMermaidFullscreen);
-  mermaidModal.addEventListener('click', function(e) {
-    if (e.target === mermaidModal) closeMermaidFullscreen();
-  });
-
-  // ===== 初始化 =====
-  function init() {
-    editor.value = '# ✍️ 开始输入 Markdown…\n\n在左侧编辑器中输入内容，右侧会实时渲染预览。\n\n支持 **粗体**、*斜体*、`代码`、表格、Mermaid 图表等语法。';
-    updatePreview();
-  }
-
-  init();
-})();
-</script>
+        // Initialization
+        window.onload = () => {
+            markdownInput.value = sampleMarkdown;
+            renderMarkdown();
+            lucide.createIcons();
+        };
+    </script>
 </body>
 </html>
